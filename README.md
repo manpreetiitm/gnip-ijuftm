@@ -268,16 +268,24 @@ curl -v a2b6d7d053ca14d6086003639915df9e-1315166877.ap-south-1.elb.amazonaws.com
 
 
 
-## Note: This application is accessible over http port, however for better security we would need to have application accessible over https.
+
+
+
+Note: This application is accessible over http port, however for better security we would need to have application accessible over https.
+
 
 ## C. Considerations/approaches for application access over https:
+
 
 ## 1. AWS API Gateway Terraform Configuration
 
 A Terraform configuration for setting up an AWS API Gateway that routes requests to a FastAPI application hosted on an EKS LoadBalancer. The configuration includes the upload of an SSL certificate to IAM, the creation of an API Gateway, and the deployment of the API.
 
 
-## Project Path : /home/manpreet/ping-identity/mtfuji-project/terraform
+## Project Path : 
+```
+/home/manpreet/ping-identity/mtfuji-project/terraform
+```
 
 ## main.tf
 ```
