@@ -11,7 +11,7 @@ This documentation provides details on the Kubernetes deployment configuration f
 ```
 /home/manpreet/ping-identity/mtfuji-project/k8s
 ```
-## Kubernetes Resources
+## A. Kubernetes Resources For FastAPI and MariaDB
 
 ### 1. Namespace
 
@@ -201,6 +201,71 @@ data:
 ```
 
 - **Purpose**: Contains the SQL commands to initialize the database, create a user, and set up a sample table with data.
+
+
+## B. Commands to deploy the FastAPI and Mariadb and test the connection:
+
+```
+kubectl create -f namespace.yml
+kubectl create -f init-sql-cm.yaml
+kubectl create -f mysql-deploy.yaml
+kubectl create -f mysql-service.yaml
+kubectl create -f fastapideploy.yaml
+
+```
+
+```
+kubectl get svc -n mtfuji-manpreet|grep fastapi
+```
+### Output:
+```
+fastapi-server-service   LoadBalancer   10.100.188.113   abc42c7059c3f426eb2379b73c21dc42-1326097048.ap-south-1.elb.amazonaws.com   80:31548/TCP     20h
+
+```
+
+Now, take the loadbalancer dns name and access the application using curl command and/or browser like below:
+
+```
+curl -v a2b6d7d053ca14d6086003639915df9e-1315166877.ap-south-1.elb.amazonaws.com/get_image/1
+```
+
+### Output:
+
+```
+* Host a2b6d7d053ca14d6086003639915df9e-1315166877.ap-south-1.elb.amazonaws.com:80 was resolved.
+* IPv6: (none)
+* IPv4: 65.0.238.101, 3.109.230.192
+*   Trying 65.0.238.101:80...
+* Connected to a2b6d7d053ca14d6086003639915df9e-1315166877.ap-south-1.elb.amazonaws.com (65.0.238.101) port 80
+> GET /get_image/1 HTTP/1.1
+> Host: a2b6d7d053ca14d6086003639915df9e-1315166877.ap-south-1.elb.amazonaws.com
+> User-Agent: curl/8.5.0
+> Accept: */*
+> 
+< HTTP/1.1 200 OK
+< date: Sat, 11 Jan 2025 07:46:04 GMT
+< server: uvicorn
+< content-length: 344
+< content-type: text/html; charset=utf-8
+< 
+
+        <html>
+            <head>
+                <title>Congrats you have successfully setup mtfuji</title>
+            </head>
+            <body>
+                <h1>Congrats you have successfully setup mtfuji!</h1>
+                <img src=https://via.placeholder.com/150 alt="kudos" class="center">
+            </body>
+        </html>
+* Connection #0 to host a2b6d7d053ca14d6086003639915df9e-1315166877.ap-south-1.elb.amazonaws.com left intact
+
+```
+
+### Checking on Browser:
+
+![image](https://github.com/user-attachments/assets/1e600421-2173-4039-b15d-82586fec9c62)
+
 
 ### 5. Monitoring with Prometheus
 
