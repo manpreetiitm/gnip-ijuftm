@@ -6,6 +6,11 @@
 
 This documentation provides details on the Kubernetes deployment configuration for a FastAPI application and a MariaDB database, along with monitoring capabilities using Prometheus. The deployment is structured to run within a specific namespace (`mtfuji-manpreet`) and includes services for both the FastAPI application and the MariaDB database.
 
+## Project Path:
+
+```
+/home/manpreet/ping-identity/mtfuji-project/k8s
+```
 ## Kubernetes Resources
 
 ### 1. Namespace
