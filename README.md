@@ -1,5 +1,5 @@
 # gnip-ijuftm
-```markdown
+
 # Documentation for FastAPI and MariaDB Deployment
 
 ## Overview
