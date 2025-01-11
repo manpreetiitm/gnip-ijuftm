@@ -481,9 +481,11 @@ spec:
   - **ServiceMonitor**: Configures Prometheus to scrape metrics from the exporter.
 
 
-Accessing the prometheus db metrics:
+## Accessing the MySQLd exporter metrics:
 
+```
 kubectl port-forward svc/mysqld-exporter -n mtfuji-manpreet 9104:9104
+```
 
 Now, from local laptop, make a tunnel to jump host 9104 port where mariadb metrics are exposed.
 
@@ -492,6 +494,94 @@ ssh -L 9104:localhost:9104 manpreet@3.110.191.143
 Then on local laptop browser:
 
 http://localhost:9104/
+
+Output:
+
+![image](https://github.com/user-attachments/assets/cd5b810a-f8b6-431f-9c96-f126723e71c7)
+
+
+Note: But we also need to have access to prometheus UI to access these metrics and run the queries:
+Hence, we need to deploy below prometheus YAMLs:
+
+## 1. prometheus-config ConfigMap:
+
+```
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: mtfuji-manpreet
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+    scrape_configs:
+      - job_name: 'mysqld-exporter'
+        static_configs:
+          - targets: ['mysqld-exporter:9104']  # Adjust this if your exporter service name is different
+      - job_name: 'fastapi'
+        static_configs:
+          - targets: ['fastapi-server-service:80']  # Adjust this if your FastAPI service name is different
+
+```
+
+## 2. prometheus Deployment:
+
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: mtfuji-manpreet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus:latest
+        ports:
+        - containerPort: 9090
+        args:
+        - "--config.file=/etc/prometheus/prometheus.yml"
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/prometheus
+      volumes:
+      - name: config-volume
+        configMap:
+          name: prometheus-config
+```
+
+## 3. Prometheus Service:
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: mtfuji-manpreet
+spec:
+  type: LoadBalancer  # Change to ClusterIP if you don't need external access
+  ports:
+  - port: 9090
+    targetPort: 9090
+  selector:
+    app: prometheus
+```
+
+After, the deployment, we need to again do the port forward same as above from the jump host first and then from laptop to the jump host to access the prometheus UI and run some queries like below:
+
+## Output
+
+![image](https://github.com/user-attachments/assets/48d7e0e8-bf91-4081-8ddc-cf5e06b81728)
+
 
 ## Conclusion
 
