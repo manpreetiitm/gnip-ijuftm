@@ -267,6 +267,108 @@ curl -v a2b6d7d053ca14d6086003639915df9e-1315166877.ap-south-1.elb.amazonaws.com
 ![image](https://github.com/user-attachments/assets/1e600421-2173-4039-b15d-82586fec9c62)
 
 
+
+## Note: This application is accessible over http port, however for better security we would need to have application accessible over https.
+
+## C. Considerations/approaches for application access over https:
+
+## 1. AWS API Gateway Terraform Configuration
+
+A Terraform configuration for setting up an AWS API Gateway that routes requests to a FastAPI application hosted on an EKS LoadBalancer. The configuration includes the upload of an SSL certificate to IAM, the creation of an API Gateway, and the deployment of the API.
+
+
+## Project Path : /home/manpreet/ping-identity/mtfuji-project/terraform
+
+## main.tf
+```
+provider "aws" {
+  region = "ap-south-1"  # Use your specific AWS region
+}
+
+# Upload SSL certificate to IAM
+resource "aws_iam_server_certificate" "api_gateway_cert" {
+  name        = "api-gateway-cert"
+  private_key = file("/home/manpreet/ping-identity/mtfuji-project/k8s/private.key")      # Path to your private key
+  certificate_body = file("/home/manpreet/ping-identity/mtfuji-project/k8s/certificate.crt")  # Path to your certificate
+  # Optional: Chain certificate if available (e.g., from CA)
+  # certificate_chain = file("certificate_chain.crt")
+}
+
+# Create the API Gateway REST API
+resource "aws_api_gateway_rest_api" "fastapi_api" {
+  name        = "FastAPI-API"
+  description = "API Gateway to route requests to FastAPI"
+}
+
+# Create the /get_image path resource
+resource "aws_api_gateway_resource" "get_image_resource" {
+  rest_api_id = aws_api_gateway_rest_api.fastapi_api.id
+  parent_id   = aws_api_gateway_rest_api.fastapi_api.root_resource_id
+  path_part   = "get_image"
+}
+
+# Create the GET method for the /get_image resource
+resource "aws_api_gateway_method" "get_method" {
+  rest_api_id   = aws_api_gateway_rest_api.fastapi_api.id
+  resource_id   = aws_api_gateway_resource.get_image_resource.id
+  http_method   = "GET"
+  authorization = "NONE"
+}
+
+# Integration setup to point to your EKS LoadBalancer
+resource "aws_api_gateway_integration" "integration" {
+  rest_api_id             = aws_api_gateway_rest_api.fastapi_api.id
+  resource_id             = aws_api_gateway_resource.get_image_resource.id
+  http_method             = aws_api_gateway_method.get_method.http_method
+  integration_http_method = "ANY"
+  type                    = "HTTP"
+  uri                     = "http://a1214dbf6c6d74a8c93bfb672a4b6d69-1252033744.ap-south-1.elb.amazonaws.com/"  # URL to your FastAPI app
+}
+
+# Optional: Create a custom domain for API Gateway (if you want to use your own domain)
+#resource "aws_api_gateway_domain_name" "custom_domain" {
+#  domain_name = "your-custom-domain.com"  # Your custom domain, if needed
+#  certificate_arn = aws_iam_server_certificate.api_gateway_cert.arn  # Use the uploaded certificate ARN
+#}
+
+# Deploy the API Gateway configuration to a stage
+resource "aws_api_gateway_deployment" "fastapi_deployment" {
+  rest_api_id = aws_api_gateway_rest_api.fastapi_api.id
+  stage_name  = "v1"
+}
+
+# Output the API Gateway URL
+output "api_gateway_url" {
+  value = aws_api_gateway_deployment.fastapi_deployment.invoke_url
+```
+
+## Note Points for changes in above main.tf before apply.
+1. Update the Configuration:
+      Modify the paths to your private key and certificate in the aws_iam_server_certificate resource
+
+    ```
+   private_key = file("/path/to/your/private.key")
+   certificate_body = file("/path/to/your/certificate.crt")
+   ```
+2. Update the uri in the aws_api_gateway_integration resource to point to your FastAPI application:
+
+   ```
+   uri = "http://your-loadbalancer-url/"
+   ```
+## Steps to initiate and apply terraform changes:
+
+```
+terraform init
+terraform plan
+terraform apply
+```
+##After a successful deployment, you can access your API using the output URL:
+
+```
+terraform output api_gateway_url
+```
+
+
 ### 5. Monitoring with Prometheus
 
 #### `mariadb-monitoring.yaml`
