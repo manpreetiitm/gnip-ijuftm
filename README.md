@@ -481,7 +481,7 @@ spec:
   - **ServiceMonitor**: Configures Prometheus to scrape metrics from the exporter.
 
 
-## Accessing the MySQLd exporter metrics:
+## 6. Accessing the MySQLd exporter metrics:
 
 ```
 kubectl port-forward svc/mysqld-exporter -n mtfuji-manpreet 9104:9104
@@ -581,6 +581,64 @@ After, the deployment, we need to again do the port forward same as above from t
 ## Output
 
 ![image](https://github.com/user-attachments/assets/48d7e0e8-bf91-4081-8ddc-cf5e06b81728)
+
+
+
+## 7. Deploying Grafana and creating sample dashboard to access mariadb metrics:
+
+1. Grafana Deployment and Service:
+
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: mtfuji-manpreet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          value: "admin"  # Change this to a secure password
+        volumeMounts:
+        - name: grafana-storage
+          mountPath: /var/lib/grafana
+      volumes:
+      - name: grafana-storage
+        emptyDir: {}  # Use a persistent volume in production
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: mtfuji-manpreet
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 3000
+    targetPort: 3000
+  selector:
+    app: grafana
+```
+
+## Grafana Dashboards with some metrics:
+
+![image](https://github.com/user-attachments/assets/1d4f2873-9e92-43af-9eef-f4b8e0420363)
+
+
+![image](https://github.com/user-attachments/assets/ec706308-7497-4c31-9457-af8420ac1286)
 
 
 ## Conclusion
