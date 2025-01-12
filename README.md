@@ -657,12 +657,13 @@ This documentation outlines the Kubernetes resources required to deploy a FastAP
 
    ```
    pip install boto3
+
    ```
 2. Create a python script at project path named : list-ec2-permission.py
 
    ## list-ec2-permission.py
 
-   ```
+```
 import boto3
 
 def get_instance_permissions(instance_id, region):
@@ -703,19 +704,21 @@ def get_instance_permissions(instance_id, region):
     else:
         print("No IAM role associated with this instance.")
 
-if __name__ == "__main__":
-    # Take instance ID and region as input from the user
-    instance_id = input("Please enter the EC2 instance ID: ")
-    region = input("Please enter the AWS region (e.g., us-east-1): ")
-    get_instance_permissions(instance_id, region)
+   if __name__ == "__main__":
+       # Take instance ID and region as input from the user
+       instance_id = input("Please enter the EC2 instance ID: ")
+       region = input("Please enter the AWS region (e.g., us-east-1): ")
+       get_instance_permissions(instance_id, region)
    ```
 
 3. Run this script in below manner:
 
 ```
 python list-ec2-permission.py 
+
 ```
-Output:
+
+## Output:
 ```
 Please enter the EC2 instance ID: i-0c7213644acc4b1a5
 Please enter the AWS region (e.g., us-east-1): ap-south-1
@@ -730,4 +733,10 @@ Traceback (most recent call last):
   File "/home/manpreet/.local/lib/python3.9/site-packages/botocore/client.py", line 1023, in _make_api_call
     raise error_class(parsed_response, operation_name)
 botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the GetInstanceProfile operation: User: arn:aws:sts::401074448412:assumed-role/mtfuji-testuser2-ec2-to-access-eks/i-0864e0bce6c31c847 is not authorized to perform: iam:GetInstanceProfile on resource: instance profile eks-08c968da-2d88-0096-4c82-1ee57490a6af because no identity-based policy allows the iam:GetInstanceProfile action
+
 ```
+Note: Currently as my assy=umed role "arn:aws:sts::401074448412:assumed-role/mtfuji-testuser2-ec2-to-access-eks/i-0864e0bce6c31c847", doesn't have access to list the permissions hence, above error.
+
+
+
+
