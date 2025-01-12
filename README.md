@@ -788,7 +788,7 @@ python unbound-volumes.py
 ```
 
 ```
-lease enter the AWS region (e.g., us-west-2): ap-south-1
+Please enter the AWS region (e.g., us-west-2): ap-south-1
 Please enter your Slack webhook URL: https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX
 ```
 ## Example Output:
@@ -805,7 +805,8 @@ Unbound EBS Volumes:
    boto3
    requests
    ```
-3. Create a Dockerfile to run this script in container env:
+   
+4. Create a Dockerfile to run this script in container env:
 
 Note: Since the script now requires user input, we will have to set the region and Slack webhook URL as environment variables instead of prompting for them interactively.
 ## Dockerfile
@@ -826,7 +827,7 @@ CMD ["python", "unbound_volumes.py"]
 
 4. Build image:
 
-   ```
+```
 sudo docker build -t unbound-volume:latest .
 [sudo] password for manpreet: 
 [+] Building 13.6s (10/10) FINISHED                                                                                                                         docker:default
@@ -859,7 +860,7 @@ sudo docker build -t unbound-volume:latest .
  => => writing image sha256:fbd2398fd09aea7853049795795b43ee161473391c16632db8546af9ac7b4ad5                                                                          0.0s 
  => => naming to docker.io/library/unbound-volume:latest                                                                                                              0.0s 
 
-   ```
+```
 
 5. Push the docker image to ECR repository:
 
