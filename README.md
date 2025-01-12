@@ -644,4 +644,90 @@ spec:
 ## Conclusion
 
 This documentation outlines the Kubernetes resources required to deploy a FastAPI application with a MariaDB backend, including initialization scripts and monitoring capabilities. Each component is designed to work together within the specified namespace, ensuring a cohesive deployment strategy.
+
+
+
+
+## TASK 2: List the permissions on the EC2 node.
+
+## Project Path: /home/manpreet/ping-identity/mtfuji-project/task2-python
+
+1. Install Boto3 Using pip:
+   You can install Boto3 using pip, which is the package installer for Python. Open your terminal or command prompt and run the following command:
+
+   ```
+   pip install boto3
+   ```
+2. Create a python script at project path named : list-ec2-permission.py
+
+   ## list-ec2-permission.py
+
+   ```
+import boto3
+
+def get_instance_permissions(instance_id, region):
+    ec2_client = boto3.client('ec2', region_name=region)
+    iam_client = boto3.client('iam')
+
+    # Get the instance profile ARN
+    try:
+        response = ec2_client.describe_instances(InstanceIds=[instance_id])
+        instance = response['Reservations'][0]['Instances'][0]
+    except Exception as e:
+        print(f"Error retrieving instance information: {e}")
+        return
+
+    # Check if the instance has an IAM role
+    if 'IamInstanceProfile' in instance:
+        instance_profile_arn = instance['IamInstanceProfile']['Arn']
+        print(f"Instance Profile ARN: {instance_profile_arn}")
+
+        # Get the role name from the instance profile
+        instance_profile_name = instance_profile_arn.split('/')[-1]
+        instance_profile = iam_client.get_instance_profile(InstanceProfileName=instance_profile_name)
+        role_name = instance_profile['InstanceProfile']['Roles'][0]['RoleName']
+        print(f"Role Name: {role_name}")
+
+        # List attached policies
+        attached_policies = iam_client.list_attached_role_policies(RoleName=role_name)
+        print("\nAttached Policies:")
+        for policy in attached_policies['AttachedPolicies']:
+            print(f"- {policy['PolicyName']} (ARN: {policy['PolicyArn']})")
+
+        # List inline policies
+        inline_policies = iam_client.list_role_policies(RoleName=role_name)
+        print("\nInline Policies:")
+        for policy_name in inline_policies['PolicyNames']:
+            print(f"- {policy_name}")
+
+    else:
+        print("No IAM role associated with this instance.")
+
+if __name__ == "__main__":
+    # Take instance ID and region as input from the user
+    instance_id = input("Please enter the EC2 instance ID: ")
+    region = input("Please enter the AWS region (e.g., us-east-1): ")
+    get_instance_permissions(instance_id, region)
+   ```
+
+3. Run this script in below manner:
+
+```
+python list-ec2-permission.py 
+```
+Output:
+```
+Please enter the EC2 instance ID: i-0c7213644acc4b1a5
+Please enter the AWS region (e.g., us-east-1): ap-south-1
+Instance Profile ARN: arn:aws:iam::401074448412:instance-profile/eks-08c968da-2d88-0096-4c82-1ee57490a6af
+Traceback (most recent call last):
+  File "/home/manpreet/ping-identity/mtfuji-project/task2-python/list-ec2-permission.py", line 45, in <module>
+    get_instance_permissions(instance_id, region)
+  File "/home/manpreet/ping-identity/mtfuji-project/task2-python/list-ec2-permission.py", line 22, in get_instance_permissions
+    instance_profile = iam_client.get_instance_profile(InstanceProfileName=instance_profile_name)
+  File "/home/manpreet/.local/lib/python3.9/site-packages/botocore/client.py", line 569, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+  File "/home/manpreet/.local/lib/python3.9/site-packages/botocore/client.py", line 1023, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the GetInstanceProfile operation: User: arn:aws:sts::401074448412:assumed-role/mtfuji-testuser2-ec2-to-access-eks/i-0864e0bce6c31c847 is not authorized to perform: iam:GetInstanceProfile on resource: instance profile eks-08c968da-2d88-0096-4c82-1ee57490a6af because no identity-based policy allows the iam:GetInstanceProfile action
 ```
