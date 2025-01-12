@@ -648,7 +648,7 @@ This documentation outlines the Kubernetes resources required to deploy a FastAP
 
 
 
-## TASK 2: List the permissions on the EC2 node.
+## TASK 2: A. List the permissions on the EC2 node.
 
 ## Project Path: /home/manpreet/ping-identity/mtfuji-project/task2-python
 
@@ -739,4 +739,175 @@ Note: Currently as my assy=umed role "arn:aws:sts::401074448412:assumed-role/mtf
 
 
 
+## TASK 2: B. Script to list all unbound volumes on the AWS Account and publish the report to slack.
 
+1. ## unbound-volumes.py
+```
+
+import boto3
+import requests
+
+# Function to list unbound volumes
+def list_unbound_volumes(region):
+    ec2 = boto3.client('ec2', region_name=region)
+    response = ec2.describe_volumes()
+    
+    unbound_volumes = []
+    for volume in response['Volumes']:
+        if volume['State'] == 'available':  # Check if the volume is unbound
+            unbound_volumes.append(volume['VolumeId'])
+    
+    return unbound_volumes
+
+# Function to send report to Slack
+def send_report_to_slack(unbound_volumes, slack_webhook_url):
+    if unbound_volumes:
+        message = f"Unbound EBS Volumes:\n" + "\n".join(unbound_volumes)
+    else:
+        message = "No unbound EBS volumes found."
+
+    payload = {
+        'text': message
+    }
+    requests.post(slack_webhook_url, json=payload)
+
+if __name__ == "__main__":
+    # Take AWS region and Slack webhook URL as input from the user
+    region = input("Please enter the AWS region (e.g., us-west-2): ")
+    slack_webhook_url = input("Please enter your Slack webhook URL: ")
+
+    unbound_volumes = list_unbound_volumes(region)
+    send_report_to_slack(unbound_volumes, slack_webhook_url)
+
+```
+
+2. Run it like below:
+
+## python unbound-volumes.py
+
+```
+lease enter the AWS region (e.g., us-west-2): ap-south-1
+Please enter your Slack webhook URL: https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX
+```
+## Example Output:
+
+```
+Unbound EBS Volumes:
+- vol-0123456789abcdef0
+- vol-0abcdef1234567890
+
+```
+3. Create requirements.txt file in project directory:
+
+   ```
+   boto3
+   requests
+   ```
+3. Create a Dockerfile to run this script in container env:
+
+Note: Since the script now requires user input, we will have to set the region and Slack webhook URL as environment variables instead of prompting for them interactively.
+## Dockerfile
+
+```
+FROM python:3.9-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+
+CMD ["python", "unbound_volumes.py"]
+
+```
+
+4. Build image:
+
+   ```
+sudo docker build -t unbound-volume:latest .
+[sudo] password for manpreet: 
+[+] Building 13.6s (10/10) FINISHED                                                                                                                         docker:default
+ => [internal] load build definition from Dockerfile                                                                                                                  0.0s
+ => => transferring dockerfile: 242B                                                                                                                                  0.0s
+ => [internal] load metadata for docker.io/library/python:3.9-slim                                                                                                    1.4s
+ => [internal] load .dockerignore                                                                                                                                     0.0s
+ => => transferring context: 2B                                                                                                                                       0.0s
+ => [1/5] FROM docker.io/library/python:3.9-slim@sha256:caaf1af9e23adc6149e5d20662b267ead9505868ff07c7673dc4a7166951cfea                                              3.7s
+ => => resolve docker.io/library/python:3.9-slim@sha256:caaf1af9e23adc6149e5d20662b267ead9505868ff07c7673dc4a7166951cfea                                              0.0s
+ => => sha256:96df0e5e81799ba220e250fc3d2c1da017b41302df5954c705bece1407dcab03 3.32MB / 3.32MB                                                                        0.6s
+ => => sha256:75a2bc32319e3d6a5bc12888b074f86338a9e3a4304d99d1dddc07155b8ba76e 14.93MB / 14.93MB                                                                      1.0s
+ => => sha256:caaf1af9e23adc6149e5d20662b267ead9505868ff07c7673dc4a7166951cfea 10.41kB / 10.41kB                                                                      0.0s
+ => => sha256:467c454a5863379d6dc810bfdbc963e877c1a887a11dddd2fca9702d2fdf27fa 1.75kB / 1.75kB                                                                        0.0s
+ => => sha256:47e5116b5ec1de854ad39b1868d3ea37555ff2ed7edb8dccc618db2427d490ae 5.28kB / 5.28kB                                                                        0.0s
+ => => sha256:fd674058ff8f8cfa7fb8a20c006fc0128541cbbad7f7f7f28df570d08f9e4d92 28.23MB / 28.23MB                                                                      0.7s
+ => => sha256:d381bf0bfd6e4697fb23da0e7d50d080411236ffcd2853432e12fd0f6b372778 248B / 248B                                                                            0.8s
+ => => extracting sha256:fd674058ff8f8cfa7fb8a20c006fc0128541cbbad7f7f7f28df570d08f9e4d92                                                                             1.6s
+ => => extracting sha256:96df0e5e81799ba220e250fc3d2c1da017b41302df5954c705bece1407dcab03                                                                             0.2s
+ => => extracting sha256:75a2bc32319e3d6a5bc12888b074f86338a9e3a4304d99d1dddc07155b8ba76e                                                                             0.9s
+ => => extracting sha256:d381bf0bfd6e4697fb23da0e7d50d080411236ffcd2853432e12fd0f6b372778                                                                             0.0s
+ => [internal] load build context                                                                                                                                     0.0s
+ => => transferring context: 650B                                                                                                                                     0.0s
+ => [2/5] WORKDIR /app                                                                                                                                                0.0s
+ => [3/5] COPY requirements.txt .                                                                                                                                     0.1s
+ => [4/5] RUN pip install -r requirements.txt                                                                                                                         7.1s
+ => [5/5] COPY . .                                                                                                                                                    0.1s 
+ => exporting to image                                                                                                                                                1.1s 
+ => => exporting layers                                                                                                                                               1.1s 
+ => => writing image sha256:fbd2398fd09aea7853049795795b43ee161473391c16632db8546af9ac7b4ad5                                                                          0.0s 
+ => => naming to docker.io/library/unbound-volume:latest                                                                                                              0.0s 
+
+   ```
+
+5. Push the docker image to ECR repository:
+
+```
+docker push your-docker-image:latest
+```
+
+6. Create a Kubernetes CronJob:
+
+```
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: unbound-volumes-report
+  namespace: mtfuji-manpreet
+spec:
+  schedule: "0 0 * * *"  # This will run the job every day at midnight UTC
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: unbound-volumes
+            image: unbound-volume:latest  # Replace with your Docker image
+            env:
+            - name: AWS_REGION
+              value: "ap-south-1"  # Replace with your desired region or make it configurable
+            - name: SLACK_WEBHOOK_URL
+              value: "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX"  # Replace with your Slack webhook URL
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aws-secret
+                  key: access-key-id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aws-secret
+                  key: secret-access-key
+          restartPolicy: OnFailure
+```
+
+7. Create a Kubernetes Secret for AWS Credentials:
+
+```
+kubectl create secret generic aws-secret --from-literal=access-key-id=YOUR_ACCESS_KEY_ID --from-literal=secret-access-key=YOUR_SECRET_ACCESS_KEY
+```
+
+8. Apply the CronJob:
+
+```
+kubectl apply -f cronjob.yaml
+```
