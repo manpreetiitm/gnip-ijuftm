@@ -741,9 +741,9 @@ Note: Currently as my assy=umed role "arn:aws:sts::401074448412:assumed-role/mtf
 
 ## TASK 2: B. Script to list all unbound volumes on the AWS Account and publish the report to slack.
 
-1. ## unbound-volumes.py
-```
+1. unbound-volumes.py
 
+```
 import boto3
 import requests
 
@@ -783,7 +783,9 @@ if __name__ == "__main__":
 
 2. Run it like below:
 
-## python unbound-volumes.py
+```
+python unbound-volumes.py
+```
 
 ```
 lease enter the AWS region (e.g., us-west-2): ap-south-1
